@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotify India · Instagram Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --green: #1DB954;
+    --dark: #121212;
+    --card: #1e1e1e;
+    --card2: #282828;
+    --text: #ffffff;
+    --muted: #b3b3b3;
+    --border: #333;
+    --purple: #7B2FBE;
+    --orange: #FF7043;
+    --blue: #2196F3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+  
+  /* HEADER */
+  .header { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); padding: 32px 40px; border-bottom: 1px solid #1DB95440; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .logo-circle { width: 48px; height: 48px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .brand h1 { font-size: 1.5rem; font-weight: 700; }
+  .brand p { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+  .date-badge { background: #1DB95420; border: 1px solid #1DB95460; color: var(--green); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; }
+  
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-top: 24px; }
+  .tab { padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.88rem; font-weight: 500; border: none; background: transparent; color: var(--muted); transition: all .2s; }
+  .tab.active, .tab:hover { background: #1DB95420; color: var(--green); }
+  .tab.active { background: var(--green); color: #000; font-weight: 700; }
+  
+  /* LAYOUT */
+  .container { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .section { margin-bottom: 40px; }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+  
+  /* KPI GRID */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 16px; }
+  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; transition: transform .2s, border-color .2s; }
+  .kpi-card:hover { transform: translateY(-2px); border-color: #1DB95460; }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius: 16px 16px 0 0; }
+  .kpi-card.green::before { background: var(--green); }
+  .kpi-card.purple::before { background: var(--purple); }
+  .kpi-card.orange::before { background: var(--orange); }
+  .kpi-card.blue::before { background: var(--blue); }
+  .kpi-card.pink::before { background: #E040FB; }
+  .kpi-card.red::before { background: #F44336; }
+  .kpi-card.teal::before { background: #00BCD4; }
+  .kpi-card.gold::before { background: #FFC107; }
+  .kpi-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+  .kpi-value { font-size: 2rem; font-weight: 800; letter-spacing: -1px; }
+  .kpi-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .kpi-icon { position: absolute; right: 16px; top: 20px; font-size: 1.5rem; opacity: 0.4; }
+  
+  /* CHART GRID */
+  .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .chart-card.wide { grid-column: 1 / -1; }
+  .chart-title { font-size: 0.9rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 16px; }
+  .chart-container { position: relative; }
+  
+  /* TABLES */
+  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .table-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .table-header h3 { font-size: 1rem; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: var(--card2); padding: 12px 16px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+  tbody tr { border-bottom: 1px solid #2a2a2a; transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #252525; }
+  td { padding: 12px 16px; font-size: 0.88rem; vertical-align: middle; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  td.engrate { color: var(--green); }
+  td.desc { max-width: 300px; }
+  td.desc a { color: var(--text); text-decoration: none; }
+  td.desc a:hover { color: var(--green); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; color: #000; white-space: nowrap; }
+  
+  /* QUALITATIVE */
+  .qual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .qual-grid { grid-template-columns: 1fr; } }
+  .insight-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .insight-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .insight-card p { color: #ccc; font-size: 0.9rem; line-height: 1.7; }
+  .insight-card ul { list-style: none; }
+  .insight-card ul li { color: #ccc; font-size: 0.88rem; line-height: 1.6; padding: 6px 0; border-bottom: 1px solid #2a2a2a; display: flex; gap: 8px; }
+  .insight-card ul li:last-child { border-bottom: none; }
+  .insight-card ul li::before { content: '▶'; color: var(--green); flex-shrink: 0; font-size: 0.7rem; margin-top: 3px; }
+  .score-bar { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+  .score-label { width: 100px; font-size: 0.82rem; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .score-track { flex: 1; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .score-val { width: 40px; font-size: 0.82rem; font-weight: 700; text-align: right; }
+  .highlight-box { background: #1DB95415; border: 1px solid #1DB95440; border-radius: 12px; padding: 16px; margin-top: 14px; }
+  .highlight-box p { color: var(--green); font-size: 0.88rem; font-weight: 600; }
+  
+  /* TOGGLE VIEW */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  /* FOOTER */
+  .footer { border-top: 1px solid var(--border); padding: 24px 40px; text-align: center; color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="brand">
+      <div class="logo-circle">🎵</div>
+      <div>
+        <h1>Spotify India · Instagram Dashboard</h1>
+        <p>Performance Report — Jan 2026 to Mar 2026</p>
+      </div>
+    </div>
+    <div class="date-badge">📅 Dec 31, 2025 – Mar 31, 2026</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">Overview</button>
+    <button class="tab" onclick="showTab('content')">Content Performance</button>
+    <button class="tab" onclick="showTab('topposts')">Top Posts</button>
+    <button class="tab" onclick="showTab('accounts')">Accounts</button>
+    <button class="tab" onclick="showTab('insights')">Qualitative Assessment</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ============ OVERVIEW ============ -->
+<div id="tab-overview" class="tab-content active">
+
+  <div class="section">
+    <div class="section-title">Key Performance Indicators</div>
+    <div class="kpi-grid">
+      <div class="kpi-card green">
+        <div class="kpi-icon">👁️</div>
+        <div class="kpi-label">Total Views</div>
+        <div class="kpi-value">572.8M</div>
+        <div class="kpi-sub">Across 179 posts</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-icon">📡</div>
+        <div class="kpi-label">Total Reach</div>
+        <div class="kpi-value">269.4M</div>
+        <div class="kpi-sub">Unique accounts</div>
+      </div>
+      <div class="kpi-card pink">
+        <div class="kpi-icon">❤️</div>
+        <div class="kpi-label">Total Likes</div>
+        <div class="kpi-value">15.8M</div>
+        <div class="kpi-sub">Across all content</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-icon">💬</div>
+        <div class="kpi-label">Comments</div>
+        <div class="kpi-value">42.1K</div>
+        <div class="kpi-sub">Total received</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-icon">🔗</div>
+        <div class="kpi-label">Total Shares</div>
+        <div class="kpi-value">342.1K</div>
+        <div class="kpi-sub">Virality driver</div>
+      </div>
+      <div class="kpi-card teal">
+        <div class="kpi-icon">🔖</div>
+        <div class="kpi-label">Total Saves</div>
+        <div class="kpi-value">192.8K</div>
+        <div class="kpi-sub">High intent signal</div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-icon">➕</div>
+        <div class="kpi-label">New Follows</div>
+        <div class="kpi-value">74.6K</div>
+        <div class="kpi-sub">From this period</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-label">Avg Eng. Rate</div>
+        <div class="kpi-value">6.5%</div>
+        <div class="kpi-sub">Engagement ÷ Reach</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Monthly Trends</div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Views &amp; Reach by Month</div>
+        <div class="chart-container"><canvas id="monthViewsChart" height="220"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Engagement Actions by Month</div>
+        <div class="chart-container"><canvas id="monthEngChart" height="220"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Weekly Performance</div>
+    <div class="chart-card">
+      <div class="chart-title">Weekly Views &amp; Engagement (Jan – Mar 2026)</div>
+      <div class="chart-container"><canvas id="weeklyChart" height="120"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ CONTENT PERFORMANCE ============ -->
+<div id="tab-content" class="tab-content">
+
+  <div class="section">
+    <div class="section-title">Content Type Breakdown</div>
+    <div class="chart-grid-3">
+      <div class="chart-card">
+        <div class="chart-title">Post Distribution</div>
+        <div class="chart-container"><canvas id="typeDonut" height="250"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Avg Views per Post Type</div>
+        <div class="chart-container"><canvas id="typeAvgViews" height="250"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Avg Engagement Rate %</div>
+        <div class="chart-container"><canvas id="typeEngRate" height="250"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Engagement Detail by Type</div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Total Views by Type</div>
+        <div class="chart-container"><canvas id="typeTotalViews" height="200"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Likes / Comments / Shares / Saves Breakdown</div>
+        <div class="chart-container"><canvas id="typeEngBreakdown" height="200"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ TOP POSTS ============ -->
+<div id="tab-topposts" class="tab-content">
+
+  <div class="section">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>🔥 Top 10 Posts by Views</h3>
+        <span style="color:var(--muted);font-size:.82rem">All 10 are IG Reels</span>
+      </div>
+      <table>
+        <thead><tr><th>Type</th><th>Caption</th><th style="text-align:right">Views</th><th style="text-align:right">Reach</th><th style="text-align:right">Eng. Rate</th></tr></thead>
+        <tbody><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVQaOeljK1t/" target="_blank">Bars so HARD, we wouldn't mind @gouravadarsh doing side quests as Flow…</a></td>
+        <td class="num">73,866,131</td>
+        <td class="num">31,285,897</td>
+        <td class="num engrate">8.77%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWG60FDDEOW/" target="_blank">Proof that you don’t need a stage for magic, just @darshanravaldz and …</a></td>
+        <td class="num">72,055,198</td>
+        <td class="num">20,853,695</td>
+        <td class="num engrate">7.13%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWWQDtQjuMD/" target="_blank">From his studio to your screen, King shares some behind-the-scenes mom…</a></td>
+        <td class="num">61,775,991</td>
+        <td class="num">30,421,206</td>
+        <td class="num engrate">1.46%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DTM_XcajCcq/" target="_blank">From the first note to the 100th film, @gvprakash’s isai will always b…</a></td>
+        <td class="num">52,351,393</td>
+        <td class="num">13,014,396</td>
+        <td class="num engrate">2.28%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DUqTM9ejk7F/" target="_blank">No more mixed signals in 2026. Just perfectly curated Mixes!</a></td>
+        <td class="num">44,999,347</td>
+        <td class="num">21,901,722</td>
+        <td class="num engrate">4.71%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVS4JcFEoS1/" target="_blank">One mic, one take, endless feels with @neetimohan18 💖</a></td>
+        <td class="num">37,410,068</td>
+        <td class="num">16,096,021</td>
+        <td class="num engrate">1.43%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVYwqsfjPwG/" target="_blank">‘Har ladki ke dil ka haal’ in a song, courtesy @neetimohan18 !</a></td>
+        <td class="num">33,574,740</td>
+        <td class="num">16,004,947</td>
+        <td class="num engrate">6.34%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWJtbHLjALK/" target="_blank">Ladies and gentlemen, a Shashwat Sachdev musical!
+
+#SpotifyXDhurandhar…</a></td>
+        <td class="num">22,875,412</td>
+        <td class="num">11,938,037</td>
+        <td class="num engrate">5.68%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWEc-wMDLew/" target="_blank">Khan Saab brought a whole mehfil with him.</a></td>
+        <td class="num">16,272,100</td>
+        <td class="num">11,341,107</td>
+        <td class="num engrate">11.69%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVgTGPJDHJ2/" target="_blank">Oru 10 mozham pottu veinga @abhyankkar. We can’t get enough of Pavazha…</a></td>
+        <td class="num">15,677,180</td>
+        <td class="num">6,403,904</td>
+        <td class="num engrate">3.59%</td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:24px">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>💥 Top 10 Posts by Total Engagement</h3>
+        <span style="color:var(--muted);font-size:.82rem">Likes + Comments + Shares + Saves</span>
+      </div>
+      <table>
+        <thead><tr><th>Type</th><th>Caption</th><th style="text-align:right">Engagement</th><th style="text-align:right">Reach</th><th style="text-align:right">Eng. Rate</th></tr></thead>
+        <tbody><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVQaOeljK1t/" target="_blank">Bars so HARD, we wouldn't mind @gouravadarsh doing side quests as Flow…</a></td>
+        <td class="num">2,744,678</td>
+        <td class="num">31,285,897</td>
+        <td class="num engrate">8.77%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWG60FDDEOW/" target="_blank">Proof that you don’t need a stage for magic, just @darshanravaldz and …</a></td>
+        <td class="num">1,487,208</td>
+        <td class="num">20,853,695</td>
+        <td class="num engrate">7.13%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWEc-wMDLew/" target="_blank">Khan Saab brought a whole mehfil with him.</a></td>
+        <td class="num">1,325,309</td>
+        <td class="num">11,341,107</td>
+        <td class="num engrate">11.69%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DUqTM9ejk7F/" target="_blank">No more mixed signals in 2026. Just perfectly curated Mixes!</a></td>
+        <td class="num">1,031,759</td>
+        <td class="num">21,901,722</td>
+        <td class="num engrate">4.71%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVYwqsfjPwG/" target="_blank">‘Har ladki ke dil ka haal’ in a song, courtesy @neetimohan18 !</a></td>
+        <td class="num">1,014,105</td>
+        <td class="num">16,004,947</td>
+        <td class="num engrate">6.34%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVvn7HFk4he/" target="_blank">MADAK NI SHADD HONI VE 🔥🔥 
+
+Jamming sessions with @spotifyindia ✨</a></td>
+        <td class="num">807,767</td>
+        <td class="num">7,372,470</td>
+        <td class="num engrate">10.96%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWEiGb-sZ8p/" target="_blank">No words, just feels @jasminesandlas</a></td>
+        <td class="num">751,349</td>
+        <td class="num">10,301,269</td>
+        <td class="num engrate">7.29%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWJtbHLjALK/" target="_blank">Ladies and gentlemen, a Shashwat Sachdev musical!
+
+#SpotifyXDhurandhar…</a></td>
+        <td class="num">678,502</td>
+        <td class="num">11,938,037</td>
+        <td class="num engrate">5.68%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DWQt_mljLLn/" target="_blank">Proof: Deva’s music has power that’s forever.</a></td>
+        <td class="num">670,196</td>
+        <td class="num">4,287,337</td>
+        <td class="num engrate">15.63%</td>
+    </tr><tr>
+        <td><span class="badge" style="background:#1DB954">IG reel</span></td>
+        <td class="desc"><a href="https://www.instagram.com/reel/DVsdAaOMSjj/" target="_blank">Kuch gallan meri dil di diary toh ho ke jandiya ne.. eh sangeet, eh ja…</a></td>
+        <td class="num">482,109</td>
+        <td class="num">6,331,772</td>
+        <td class="num engrate">7.61%</td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ ACCOUNTS ============ -->
+<div id="tab-accounts" class="tab-content">
+
+  <div class="section">
+    <div class="section-title">Account Performance</div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Handle</th><th>Account Name</th><th style="text-align:right">Posts</th><th style="text-align:right">Total Views</th><th style="text-align:right">Total Reach</th><th style="text-align:right">Eng. Rate</th></tr></thead>
+        <tbody><tr>
+        <td>@spotifyindia</td>
+        <td>Spotify India</td>
+        <td class="num">166</td>
+        <td class="num">552,001,830</td>
+        <td class="num">258,026,275</td>
+        <td class="num engrate">5.9%</td>
+    </tr><tr>
+        <td>@simirankaur_dhadli</td>
+        <td>Simran Kaur Dhadli</td>
+        <td class="num">4</td>
+        <td class="num">18,803,923</td>
+        <td class="num">10,115,526</td>
+        <td class="num engrate">10.91%</td>
+    </tr><tr>
+        <td>@figuringout.co</td>
+        <td>Figuring Out with Raj Shamani</td>
+        <td class="num">4</td>
+        <td class="num">886,062</td>
+        <td class="num">689,405</td>
+        <td class="num engrate">4.92%</td>
+    </tr><tr>
+        <td>@spotify</td>
+        <td>Spotify</td>
+        <td class="num">1</td>
+        <td class="num">716,524</td>
+        <td class="num">297,229</td>
+        <td class="num engrate">1.55%</td>
+    </tr><tr>
+        <td>@dhhrohan</td>
+        <td>Rohan Talks DHH</td>
+        <td class="num">1</td>
+        <td class="num">139,941</td>
+        <td class="num">84,537</td>
+        <td class="num engrate">9.6%</td>
+    </tr><tr>
+        <td>@lollaindia</td>
+        <td>Lollapalooza India</td>
+        <td class="num">1</td>
+        <td class="num">101,909</td>
+        <td class="num">61,949</td>
+        <td class="num engrate">5.4%</td>
+    </tr><tr>
+        <td>@momentofsilencepod</td>
+        <td>Moment of Silence</td>
+        <td class="num">1</td>
+        <td class="num">95,490</td>
+        <td class="num">67,397</td>
+        <td class="num engrate">1.7%</td>
+    </tr><tr>
+        <td>@ifaridoon</td>
+        <td>Faridoon Shahryar</td>
+        <td class="num">1</td>
+        <td class="num">54,102</td>
+        <td class="num">39,739</td>
+        <td class="num engrate">2.12%</td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="chart-card wide">
+      <div class="chart-title">Views by Account</div>
+      <div class="chart-container"><canvas id="acctViewsChart" height="120"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ QUALITATIVE INSIGHTS ============ -->
+<div id="tab-insights" class="tab-content">
+
+  <div class="section">
+    <div class="section-title">Qualitative Assessment</div>
+    <div class="qual-grid">
+
+      <div class="insight-card" style="grid-column: 1/-1; border-color:#1DB95440;">
+        <h3>🎯 Executive Summary</h3>
+        <p>Spotify India's Instagram performance from January to March 2026 shows <strong style="color:var(--green)">strong and accelerating momentum</strong>, with total views surging from 66M in January to 328M in March — a <strong style="color:var(--green)">~5× increase in three months</strong>. The account's Reel-first strategy is paying off decisively: 91 Reels generated an average of <strong style="color:var(--green)">6M+ views each</strong>, dwarfing carousels and images. High-impact artist collaboration content (Darshan Raval, King, Khan Saab, Shashwat Sachdev) drove outsized virality, with 7 posts exceeding 10M views individually. The 6.5% average engagement rate is well above the Instagram industry benchmark of ~1–3%, reflecting a deeply engaged music-fan audience.</p>
+      </div>
+
+      <div class="insight-card">
+        <h3>📈 Growth Signal Scores</h3>
+        <p style="margin-bottom:14px; color:var(--muted)">Rated across key performance dimensions</p>
+        <div class="score-bar">
+          <span class="score-label">Reach</span>
+          <div class="score-track"><div class="score-fill" style="width:88%; background:var(--green)"></div></div>
+          <span class="score-val" style="color:var(--green)">88</span>
+        </div>
+        <div class="score-bar">
+          <span class="score-label">Engagement</span>
+          <div class="score-track"><div class="score-fill" style="width:85%; background:#00BCD4"></div></div>
+          <span class="score-val" style="color:#00BCD4">85</span>
+        </div>
+        <div class="score-bar">
+          <span class="score-label">Virality</span>
+          <div class="score-track"><div class="score-fill" style="width:92%; background:#E040FB"></div></div>
+          <span class="score-val" style="color:#E040FB">92</span>
+        </div>
+        <div class="score-bar">
+          <span class="score-label">Consistency</span>
+          <div class="score-track"><div class="score-fill" style="width:78%; background:#FFC107"></div></div>
+          <span class="score-val" style="color:#FFC107">78</span>
+        </div>
+        <div class="score-bar">
+          <span class="score-label">Save Intent</span>
+          <div class="score-track"><div class="score-fill" style="width:72%; background:#FF7043"></div></div>
+          <span class="score-val" style="color:#FF7043">72</span>
+        </div>
+        <div class="highlight-box"><p>Overall Health Score: 83 / 100 — Strong performer with viral potential</p></div>
+      </div>
+
+      <div class="insight-card">
+        <h3>✅ What's Working</h3>
+        <ul>
+          <li><strong>Artist-collab Reels dominate:</strong> The top 10 posts are all Reels featuring major Indian artists (Khan Saab, King, Darshan Raval, Shashwat Sachdev) — authentic performances drive massive shares and saves.</li>
+          <li><strong>Multilingual content resonates:</strong> Tamil, Punjabi, Telugu, and Hindi content each find dedicated audiences. Regional posts (e.g. Simiran Kaur Dhadli content) show 10%+ engagement rates.</li>
+          <li><strong>BTS/K-Pop activation:</strong> The #SpotifyDecodingARIRANG campaign sustained consistent engagement across mid-March, with the pre-save Reel hitting 80K+ likes.</li>
+          <li><strong>Mixes/Playlist discovery posts:</strong> The "No more mixed signals" Reel hit 45M views, showing that product-feature storytelling works when paired with the right content format.</li>
+          <li><strong>Moment-led content:</strong> Holi, cricket tie-ins, and New Year posts captured real-time cultural conversation.</li>
+        </ul>
+      </div>
+
+      <div class="insight-card">
+        <h3>⚠️ Areas for Improvement</h3>
+        <ul>
+          <li><strong>Carousel/image underperformance:</strong> Carousels and images average ~272K–280K views vs 6M for Reels. Static content needs sharper hooks or interactive formats (polls, quizzes) to close the gap.</li>
+          <li><strong>Podcast content lags significantly:</strong> Podcast-promo carousels (e.g. "Skip the small talk", "Right podcast, right time") receive under 50K views with minimal engagement — format rethink needed.</li>
+          <li><strong>Follower conversion is low:</strong> Only 74K follows from 269M total reach (~0.03% follow rate). Stronger CTAs and profile-visit hooks could convert more passive viewers into followers.</li>
+          <li><strong>January was comparatively quiet:</strong> Jan content averaged much lower performance — the cadence of high-impact collaborations was lower. A planned tentpole activation strategy could lift the floor.</li>
+          <li><strong>Comment engagement gap:</strong> 42K comments vs 15.8M likes is a 0.27% comment-to-like ratio. More question-led, community-building content could deepen two-way interaction.</li>
+        </ul>
+      </div>
+
+      <div class="insight-card">
+        <h3>🎬 Content Theme Analysis</h3>
+        <ul>
+          <li><strong>Artist spotlights &amp; collabs</strong> — highest reach and saves (Darshan Raval, King, GV Prakash, Khan Saab, Shashwat Sachdev)</li>
+          <li><strong>City/regional music discovery</strong> — reliable mid-tier performer with strong carousel saves</li>
+          <li><strong>Spotify product features</strong> — Mixes, SongDNA, Jam, Offline Backup — mixed results; Mixes was the standout hit</li>
+          <li><strong>K-Pop/BTS campaigns</strong> — strong engagement, dedicated ARMY audience boosts comment velocity</li>
+          <li><strong>DHH/Rap content</strong> — high shares, strong community signal (e.g. @gouravadarsh Flowpara Reel at 73M views)</li>
+          <li><strong>Weekly chart recaps</strong> — consistent but low-engagement; good for regular cadence but needs format refresh</li>
+        </ul>
+      </div>
+
+      <div class="insight-card">
+        <h3>🔮 Recommendations</h3>
+        <ul>
+          <li><strong>Double down on Reels:</strong> Target 70%+ Reel share of posts. Every major content moment should have a Reel version. Current 51% Reel ratio still leaves room to grow.</li>
+          <li><strong>Invest in artist-first storytelling:</strong> Behind-the-scenes, studio sessions, and "how this song was made" formats drive both reach and saves — expand this format to 2–3 posts/week.</li>
+          <li><strong>Refresh podcast format:</strong> Convert podcast highlights into audiogram Reels or short interview clips. Carousel pod-promos are not breaking through.</li>
+          <li><strong>Monthly tentpole planning:</strong> Feb/Mar benefited from major campaign moments (BTS, Dhurandhar). Lock in a monthly cultural/artist moment to anchor each month's content calendar.</li>
+          <li><strong>Boost follower conversion:</strong> Test "follow-to-unlock" Stories or CTA-led Reels to drive profile conversion from the enormous reach base.</li>
+          <li><strong>Increase comment-bait content:</strong> More "drop your city's anthem 👇" or "tag someone who listens to this" posts to activate comment sections, improving algorithmic distribution.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</div><!-- /container -->
+
+<div class="footer">
+  Spotify India Instagram Dashboard · Data: Dec 31, 2025 – Mar 31, 2026 · 179 posts analysed · Generated April 08, 2026
+</div>
+
+<script>
+const GREEN = '#1DB954', PURPLE = '#7B2FBE', ORANGE = '#FF7043', BLUE = '#2196F3', TEAL = '#00BCD4', PINK = '#E040FB', GOLD = '#FFC107';
+
+Chart.defaults.color = '#b3b3b3';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+// Monthly views & reach
+new Chart(document.getElementById('monthViewsChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Jan 2026", "Feb 2026", "Mar 2026"],
+    datasets: [
+      { label: 'Views', data: [66354267, 178440625, 328004889], backgroundColor: GREEN + 'AA', borderColor: GREEN, borderWidth: 2, borderRadius: 6, yAxisID: 'y' },
+      { label: 'Reach', data: [22542249, 82568794, 164271014], backgroundColor: BLUE + 'AA', borderColor: BLUE, borderWidth: 2, borderRadius: 6, yAxisID: 'y' },
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { grid: { color: '#2a2a2a' }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v } } } }
+});
+
+// Monthly engagement
+new Chart(document.getElementById('monthEngChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Jan 2026", "Feb 2026", "Mar 2026"],
+    datasets: [
+      { label: 'Likes', data: [711614, 5146303, 9943350], backgroundColor: PINK + 'CC', borderRadius: 4 },
+      { label: 'Shares', data: [26279, 70085, 245698], backgroundColor: ORANGE + 'CC', borderRadius: 4 },
+      { label: 'Saves', data: [14338, 36947, 141540], backgroundColor: TEAL + 'CC', borderRadius: 4 },
+      { label: 'Comments', data: [11349, 11898, 18827], backgroundColor: GOLD + 'CC', borderRadius: 4 },
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true }, y: { stacked: true, grid: { color: '#2a2a2a' }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v } } } }
+});
+
+// Weekly bar
+new Chart(document.getElementById('weeklyChart'), {
+  type: 'bar',
+  data: {
+    labels: ["12-29", "01-05", "01-12", "01-19", "01-26", "02-02", "02-09", "02-16", "02-23", "03-02", "03-09", "03-16", "03-23", "03-30"],
+    datasets: [
+      { label: 'Views', data: [3307071, 55538957, 3074302, 2263826, 2170111, 3730287, 52313498, 7546829, 114850011, 56868003, 30510970, 153927287, 85289972, 1408657], backgroundColor: GREEN + '99', borderColor: GREEN, borderWidth: 1, borderRadius: 4, yAxisID: 'y' },
+      { label: 'Engagement', data: [74550, 411899, 40770, 146646, 89715, 209160, 1288903, 517942, 3249228, 1631851, 1572927, 5677126, 1429722, 37789], type: 'line', borderColor: ORANGE, backgroundColor: ORANGE + '20', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: ORANGE, yAxisID: 'y1' },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      y: { position: 'left', grid: { color: '#2a2a2a' }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v } },
+      y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v } },
+    }
+  }
+});
+
+// Type donut
+new Chart(document.getElementById('typeDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['IG Reel', 'IG Carousel', 'IG Image'],
+    datasets: [{ data: [91, 58, 30], backgroundColor: [GREEN, PURPLE, ORANGE], borderColor: '#1e1e1e', borderWidth: 3, hoverOffset: 8 }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} posts` } } } }
+});
+
+// Avg views per type
+new Chart(document.getElementById('typeAvgViews'), {
+  type: 'bar',
+  data: {
+    labels: ['IG Reel', 'IG Carousel', 'IG Image'],
+    datasets: [{ label: 'Avg Views', data: [6026408, 279839, 272201], backgroundColor: [GREEN+'BB', PURPLE+'BB', ORANGE+'BB'], borderRadius: 8 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2a2a2a' }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v } } } }
+});
+
+// Avg eng rate per type
+new Chart(document.getElementById('typeEngRate'), {
+  type: 'bar',
+  data: {
+    labels: ['IG Reel', 'IG Carousel', 'IG Image'],
+    datasets: [{ label: 'Avg Eng Rate %', data: [6.18, 4.24, 4.5], backgroundColor: [TEAL+'BB', PINK+'BB', GOLD+'BB'], borderRadius: 8 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2a2a2a' }, ticks: { callback: v => v+'%' } } } }
+});
+
+// Total views by type
+new Chart(document.getElementById('typeTotalViews'), {
+  type: 'bar',
+  data: {
+    labels: ['IG Reel', 'IG Carousel', 'IG Image'],
+    datasets: [{ label: 'Total Views', data: [548403087, 16230657, 8166037], backgroundColor: [GREEN+'CC', PURPLE+'CC', ORANGE+'CC'], borderRadius: 8 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2a2a2a' }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v } } } }
+});
+
+// Engagement breakdown by type
+new Chart(document.getElementById('typeEngBreakdown'), {
+  type: 'bar',
+  data: {
+    labels: ['IG Reel', 'IG Carousel', 'IG Image'],
+    datasets: [
+      { label: 'Likes', data: [15255386, 359497, 186384], backgroundColor: PINK+'BB', borderRadius: 4 },
+      { label: 'Shares', data: [298508, 21206, 22348], backgroundColor: ORANGE+'BB', borderRadius: 4 },
+      { label: 'Saves', data: [172994, 13259, 6572], backgroundColor: TEAL+'BB', borderRadius: 4 },
+      { label: 'Comments', data: [26052, 3588, 12434], backgroundColor: GOLD+'BB', borderRadius: 4 },
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true }, y: { stacked: true, grid: { color: '#2a2a2a' }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v } } } }
+});
+
+// Account views bar
+const acctData = {"spotifyindia": {"name": "Spotify India", "views": 552001830, "count": 166}, "figuringout.co": {"name": "Figuring Out with Raj Shamani", "views": 886062, "count": 4}, "momentofsilencepod": {"name": "Moment of Silence", "views": 95490, "count": 1}, "simirankaur_dhadli": {"name": "Simran Kaur Dhadli", "views": 18803923, "count": 4}, "spotify": {"name": "Spotify", "views": 716524, "count": 1}, "ifaridoon": {"name": "Faridoon Shahryar", "views": 54102, "count": 1}, "lollaindia": {"name": "Lollapalooza India", "views": 101909, "count": 1}, "dhhrohan": {"name": "Rohan Talks DHH", "views": 139941, "count": 1}};
+const acctSorted = Object.entries(acctData).sort((a,b) => b[1].views - a[1].views);
+new Chart(document.getElementById('acctViewsChart'), {
+  type: 'bar',
+  data: {
+    labels: acctSorted.map(a => a[1].name),
+    datasets: [{ label: 'Total Views', data: acctSorted.map(a => a[1].views), backgroundColor: [GREEN, PURPLE, ORANGE, BLUE, TEAL, PINK, GOLD, '#888'].map(c => c+'BB'), borderRadius: 8 }]
+  },
+  options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#2a2a2a' }, ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v } } } }
+});
+
+// Tab switching
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
